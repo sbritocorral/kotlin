@@ -32,5 +32,7 @@
   </component>
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/kot1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/kotlin-ultimate" vcs="Git" />
   </component>
 </project>

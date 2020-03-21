@@ -17,10 +17,8 @@
 package org.jetbrains.uast.kotlin.declarations
 
 import com.intellij.psi.*
-import com.intellij.psi.impl.light.LightMethodBuilder
-import com.intellij.psi.impl.light.LightModifierList
-import com.intellij.psi.impl.light.LightParameterListBuilder
-import com.intellij.psi.impl.light.LightTypeParameterBuilder
+import com.intellij.psi.impl.light.*
+import com.intellij.psi.impl.light.LightParameter
 import org.jetbrains.kotlin.asJava.elements.*
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.psi.*
@@ -177,6 +175,35 @@ private class UastFakeLightMethod(private val original: KtFunction, containingCl
     }
 
     override fun getTypeParameterList(): PsiTypeParameterList? = _buildTypeParameterList
+
+    private val paramsList: PsiParameterList by lazy {
+        object : LightParameterListBuilder(original.manager, original.language) {
+            override fun getParent(): PsiElement = this@UastFakeLightMethod
+            override fun getContainingFile(): PsiFile = parent.containingFile
+
+            init {
+                val parameterList = this
+                for ((i, p) in original.valueParameters.withIndex()) {
+                    this.addParameter(
+                        object : LightParameter(
+                            p.name ?: "p$i",
+                            p.typeReference?.getType()
+                                ?.toPsiType(this@UastFakeLightMethod, original, false)
+                                ?: UastErrorType,
+                            this,
+                            original.language
+                        ) {
+                            override fun getContainingFile(): PsiFile = parent.containingFile
+
+                            override fun getParent(): PsiElement = parameterList
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    override fun getParameterList(): PsiParameterList = paramsList
 
     override fun getReturnType(): PsiType? {
         val context = original.analyze()

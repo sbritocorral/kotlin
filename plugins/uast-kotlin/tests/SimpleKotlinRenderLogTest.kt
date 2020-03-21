@@ -131,6 +131,9 @@ class SimpleKotlinRenderLogTest : AbstractKotlinUastTest(), AbstractKotlinRender
     fun testReified() = doTest("Reified")
 
     @Test
+    fun testReifiedReturnType() = doTest("ReifiedReturnType")
+
+    @Test
     fun testSuspend() = doTest("Suspend")
 
     @Test

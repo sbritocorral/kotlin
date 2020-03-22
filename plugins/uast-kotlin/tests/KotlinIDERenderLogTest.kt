@@ -160,4 +160,7 @@ class KotlinIDERenderLogTest : AbstractKotlinUastLightCodeInsightFixtureTest(), 
 
     @Test
     fun testDeprecatedHidden() = doTest("DeprecatedHidden")
+
+    @Test
+    fun testTryCatch() = doTest("TryCatch")
 }

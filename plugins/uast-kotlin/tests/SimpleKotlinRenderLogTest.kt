@@ -138,6 +138,9 @@ class SimpleKotlinRenderLogTest : AbstractKotlinUastTest(), AbstractKotlinRender
 
     @Test
     fun testDeprecatedHidden() = doTest("DeprecatedHidden")
+
+    @Test
+    fun testTryCatch() = doTest("TryCatch")
 }
 
 fun withForceUInjectionHostValue(call: () -> Unit) {

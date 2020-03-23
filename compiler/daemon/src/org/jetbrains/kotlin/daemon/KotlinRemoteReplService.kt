@@ -85,8 +85,12 @@ abstract class KotlinJvmReplServiceBase(
                 projectEnvironment
             )
         } catch (ex: Throwable) {
-            messageCollector.report(CompilerMessageSeverity.ERROR, "Unable to construct repl compiler: ${ex.message}")
-            throw IllegalStateException("Unable to use scripting/REPL in the daemon: ${ex.message}", ex)
+            val stacktrace = ex.stackTrace.joinToString("\n")
+            messageCollector.report(
+                CompilerMessageSeverity.ERROR,
+                "Unable to construct repl compiler: ${ex.message}\nStacktrace:\n$stacktrace"
+            )
+            throw IllegalStateException("Unable to use scripting/REPL in the daemon: ${ex.message}\nStacktrace:\n$stacktrace", ex)
         }
     }
 

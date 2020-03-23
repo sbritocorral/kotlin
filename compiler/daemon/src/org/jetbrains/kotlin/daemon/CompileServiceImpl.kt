@@ -494,7 +494,7 @@ abstract class CompileServiceImplBase(
                     body()
                 } catch (e: Throwable) {
                     log.log(Level.SEVERE, "Exception", e)
-                    CompileService.CallResult.Error(e.message ?: "unknown")
+                    CompileService.CallResult.Error(e.message ?: "unknown" + "\nStacktrace:\n" + e.stackTrace.joinToString("\n"))
                 }
             }
         }

@@ -19,6 +19,7 @@ import org.jetbrains.kotlin.asJava.elements.KtLightField
 import org.jetbrains.kotlin.asJava.elements.KtLightFieldImpl
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl
+import org.jetbrains.kotlin.asJava.elements.KtLightMethodImpl.Factory.filteredNonSyntheticMethods
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.NotNullableUserDataProperty
 import org.jetbrains.kotlin.psi.debugText.getDebugText
@@ -126,9 +127,10 @@ sealed class LazyLightClassDataHolder(
         }
 
         override fun getOwnMethods(containingClass: KtLightClass): List<KtLightMethod> {
-            if (dummyDelegate == null) return KtLightMethodImpl.fromClsMethods(clsDelegate, containingClass)
 
-            return dummyDelegate!!.methods.map { dummyMethod ->
+            val dummyDelegate = dummyDelegate ?: return KtLightMethodImpl.fromClsMethods(clsDelegate, containingClass)
+
+            return filteredNonSyntheticMethods(dummyDelegate).map { dummyMethod ->
                 val methodOrigin = KtLightMethodImpl.getOrigin(dummyMethod)
 
                 KtLightMethodImpl.lazy(dummyMethod, containingClass, methodOrigin) {

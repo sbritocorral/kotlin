@@ -31,6 +31,7 @@ import org.jetbrains.kotlin.asJava.builder.memberIndex
 import org.jetbrains.kotlin.asJava.classes.KtLightClass
 import org.jetbrains.kotlin.asJava.classes.cannotModify
 import org.jetbrains.kotlin.asJava.classes.lazyPub
+import org.jetbrains.kotlin.asJava.isSyntheticValuesOrValueOfMethod
 import org.jetbrains.kotlin.asJava.propertyNameByAccessor
 import org.jetbrains.kotlin.asJava.unwrapped
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
@@ -237,9 +238,11 @@ open class KtLightMethodImpl protected constructor(
             return KtLightMethodImpl(computeRealDelegate, origin, containingClass, dummyDelegate)
         }
 
-        fun fromClsMethods(delegateClass: PsiClass, containingClass: KtLightClass) = delegateClass.methods.map {
-            KtLightMethodImpl.create(it, getOrigin(it), containingClass)
-        }
+        fun filteredNonSyntheticMethods(delegateClass: PsiClass): List<PsiMethod> =
+            delegateClass.methods.filter { !isSyntheticValuesOrValueOfMethod(delegateClass.isEnum, it) }
+
+        fun fromClsMethods(delegateClass: PsiClass, containingClass: KtLightClass) =
+            filteredNonSyntheticMethods(delegateClass).map { create(it, getOrigin(it), containingClass) }
 
         fun getOrigin(method: PsiMethod) = adjustMethodOrigin(getMemberOrigin(method))
     }

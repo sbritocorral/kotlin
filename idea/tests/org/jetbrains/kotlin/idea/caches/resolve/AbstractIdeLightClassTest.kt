@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.asJava.classes.KtLightClass
 import org.jetbrains.kotlin.asJava.classes.KtLightClassForFacade
 import org.jetbrains.kotlin.asJava.classes.KtLightClassForSourceDeclaration
 import org.jetbrains.kotlin.asJava.elements.*
+import org.jetbrains.kotlin.asJava.isSyntheticValuesOrValueOfMethod
 import org.jetbrains.kotlin.asJava.toLightClass
 import org.jetbrains.kotlin.codegen.forTestCompile.ForTestCompileRuntime
 import org.jetbrains.kotlin.idea.KotlinDaemonAnalyzerTestCase
@@ -309,6 +310,7 @@ object LightClassLazinessChecker {
 
     private fun classInfo(psiClass: PsiClass) = with(psiClass) {
         checkModifierList(modifierList!!)
+        val methods = methods.filter { !isSyntheticValuesOrValueOfMethod(isEnum, it) }.toTypedArray()
         ClassInfo(fields.names(), methods.names(), PsiModifier.MODIFIERS.asList().filter { modifierList!!.hasModifierProperty(it) })
     }
 

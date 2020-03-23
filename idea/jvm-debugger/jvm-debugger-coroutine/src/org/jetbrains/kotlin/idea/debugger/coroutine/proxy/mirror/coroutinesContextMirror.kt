@@ -24,7 +24,7 @@ class CoroutineContext(context: DefaultExecutionContext) :
     }
 
     fun <T> getElementValue(value: ObjectReference, context: DefaultExecutionContext, keyProvider: ContextKey<T>): T? {
-        val elementValue = objectValue(value, getContextElement, context, keyProvider.key()) ?: return null
+        val elementValue = objectValue(value, getContextElement, context, keyProvider.key() ?: return null) ?: return null
         return keyProvider.mirror(elementValue, context)
     }
 }
@@ -37,7 +37,7 @@ data class MirrorOfCoroutineContext(
 )
 
 abstract class ContextKey<T>(name: String, context: DefaultExecutionContext) : BaseMirror<T>(name, context) {
-    abstract fun key() : ObjectReference
+    abstract fun key() : ObjectReference?
 }
 
 class CoroutineName(context: DefaultExecutionContext) : ContextKey<String>("kotlinx.coroutines.CoroutineName", context) {

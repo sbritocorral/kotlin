@@ -32,9 +32,9 @@ abstract class BaseMirror<T>(val name: String, context: DefaultExecutionContext)
             return fetchMirror(value, context)
     }
 
-    fun staticObjectValue(fieldName: String): ObjectReference {
+    fun staticObjectValue(fieldName: String): ObjectReference? {
         val keyFieldRef = makeField(fieldName)
-        return cls.getValue(keyFieldRef) as ObjectReference
+        return cls.getValue(keyFieldRef) as? ObjectReference
     }
 
     fun stringValue(value: ObjectReference, field: Field) =

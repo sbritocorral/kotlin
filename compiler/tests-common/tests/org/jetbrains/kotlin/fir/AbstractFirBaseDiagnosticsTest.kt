@@ -307,7 +307,7 @@ abstract class AbstractFirBaseDiagnosticsTest : BaseDiagnosticsTest() {
 
     private fun Iterable<ConeDiagnostic>.toActualDiagnostic(root: PsiElement): List<ActualDiagnostic> {
         val result = mutableListOf<ActualDiagnostic>()
-        filter { it.diagnostic.factory != FirErrors.SYNTAX_ERROR }.mapTo(result) { ActualDiagnostic(it.diagnostic, null, true) }
+        mapTo(result) { ActualDiagnostic(it.diagnostic, null, true) }
         for (errorElement in AnalyzingUtils.getSyntaxErrorRanges(root)) {
             result.add(ActualDiagnostic(SyntaxErrorDiagnostic(errorElement), null, true))
         }

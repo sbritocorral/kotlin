@@ -713,15 +713,7 @@ class DeclarationsConverter(
             }
         }
 
-        val delegatedSelfTypeRef =
-            if (classWrapper.isObjectLiteral()) buildErrorTypeRef {
-                source = secondaryConstructor.toFirSourceElement()
-                diagnostic = FirSimpleDiagnostic(
-                    "Constructor in object",
-                    DiagnosticKind.ConstructorInObject
-                )
-            }
-            else classWrapper.delegatedSelfTypeRef
+        val delegatedSelfTypeRef = classWrapper.delegatedSelfTypeRef
 
         val explicitVisibility = modifiers.getVisibility()
         val status = FirDeclarationStatusImpl(explicitVisibility, Modality.FINAL).apply {
@@ -772,15 +764,7 @@ class DeclarationsConverter(
         val isImplicit = constructorDelegationCall.asText.isEmpty()
         val isThis = (isImplicit && classWrapper.hasPrimaryConstructor) || thisKeywordPresent
         val delegatedType =
-            if (classWrapper.isObjectLiteral() || classWrapper.isInterface()) when {
-                isThis -> buildErrorTypeRef {
-                    diagnostic = FirSimpleDiagnostic("Constructor in object", DiagnosticKind.ConstructorInObject)
-                }
-                else -> buildErrorTypeRef {
-                    diagnostic = FirSimpleDiagnostic("No super type", DiagnosticKind.Syntax)
-                }
-            }
-            else when {
+            when {
                 isThis -> classWrapper.delegatedSelfTypeRef
                 else -> classWrapper.delegatedSuperTypeRef
             }

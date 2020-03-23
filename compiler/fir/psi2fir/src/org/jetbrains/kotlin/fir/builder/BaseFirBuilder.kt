@@ -57,6 +57,7 @@ abstract class BaseFirBuilder<T>(val baseSession: FirSession, val context: Conte
     abstract fun T.getReferencedNameAsName(): Name
     abstract fun T.getLabelName(): String?
     abstract fun T.getExpressionInParentheses(): T?
+    abstract fun T.getAnnotatedExpression(): T?
     abstract fun T.getChildNodeByType(type: IElementType): T?
     abstract val T?.selectorExpression: T?
 
@@ -178,7 +179,7 @@ abstract class BaseFirBuilder<T>(val baseSession: FirSession, val context: Conte
                 bind(
                     buildErrorLoop(
                         expression.getSourceOrNull(),
-                        FirSimpleDiagnostic("Cannot bind unlabeled jump to a loop", DiagnosticKind.Syntax)
+                        FirSimpleDiagnostic("Cannot bind unlabeled jump to a loop", DiagnosticKind.JumpOutsideLoop)
                     )
                 )
             }
@@ -192,7 +193,7 @@ abstract class BaseFirBuilder<T>(val baseSession: FirSession, val context: Conte
             target = FirLoopTarget(labelName).apply {
                 bind(
                     buildErrorLoop(
-                        expression.getSourceOrNull(), FirSimpleDiagnostic("Cannot bind label $labelName to a loop", DiagnosticKind.Syntax)
+                        expression.getSourceOrNull(), FirSimpleDiagnostic("Cannot bind label $labelName to a loop", DiagnosticKind.NotLoopLabel)
                     )
                 )
             }
@@ -237,7 +238,7 @@ abstract class BaseFirBuilder<T>(val baseSession: FirSession, val context: Conte
                     expression.getSourceOrNull(),
                     kind,
                     convertedText,
-                    FirSimpleDiagnostic("Incorrect integer literal: $text", DiagnosticKind.Syntax)
+                    FirSimpleDiagnostic("Incorrect integer literal: $text", DiagnosticKind.IllegalConstExpression)
                 )
             }
             FLOAT_CONSTANT ->
@@ -246,14 +247,14 @@ abstract class BaseFirBuilder<T>(val baseSession: FirSession, val context: Conte
                         expression.getSourceOrNull(),
                         FirConstKind.Float,
                         convertedText,
-                        FirSimpleDiagnostic("Incorrect float: $text", DiagnosticKind.Syntax)
+                        FirSimpleDiagnostic("Incorrect float: $text", DiagnosticKind.IllegalConstExpression)
                     )
                 } else {
                     buildConstOrErrorExpression(
                         expression.getSourceOrNull(),
                         FirConstKind.Double,
                         convertedText as Double,
-                        FirSimpleDiagnostic("Incorrect double: $text", DiagnosticKind.Syntax)
+                        FirSimpleDiagnostic("Incorrect double: $text", DiagnosticKind.IllegalConstExpression)
                     )
                 }
             CHARACTER_CONSTANT ->
@@ -261,7 +262,7 @@ abstract class BaseFirBuilder<T>(val baseSession: FirSession, val context: Conte
                     expression.getSourceOrNull(),
                     FirConstKind.Char,
                     text.parseCharacter(),
-                    FirSimpleDiagnostic("Incorrect character: $text", DiagnosticKind.Syntax)
+                    FirSimpleDiagnostic("Incorrect character: $text", DiagnosticKind.IllegalConstExpression)
                 )
             BOOLEAN_CONSTANT ->
                 buildConstExpression(
@@ -452,11 +453,14 @@ abstract class BaseFirBuilder<T>(val baseSession: FirSession, val context: Conte
                 PARENTHESIZED -> {
                     return initializeLValue(left.getExpressionInParentheses(), convertQualified)
                 }
+                ANNOTATED_EXPRESSION -> {
+                    return initializeLValue(left.getAnnotatedExpression(), convertQualified)
+                }
             }
         }
         return buildErrorNamedReference {
             source = left.getSourceOrNull()
-            diagnostic = FirSimpleDiagnostic("Unsupported LValue: $tokenType", DiagnosticKind.Syntax)
+            diagnostic = FirSimpleDiagnostic("Unsupported LValue: $tokenType", DiagnosticKind.VariableExpected)
         }
     }
 
@@ -491,7 +495,9 @@ abstract class BaseFirBuilder<T>(val baseSession: FirSession, val context: Conte
                 argumentList = buildBinaryArgumentList(
                     this@generateAssignment?.convert() ?: buildErrorExpression {
                         source = null
-                        diagnostic = FirSimpleDiagnostic("Unsupported left value of assignment: ${baseSource?.psi?.text}", DiagnosticKind.Syntax)
+                        diagnostic = FirSimpleDiagnostic(
+                            "Unsupported left value of assignment: ${baseSource?.psi?.text}", DiagnosticKind.ExpressionRequired
+                        )
                     },
                     value
                 )

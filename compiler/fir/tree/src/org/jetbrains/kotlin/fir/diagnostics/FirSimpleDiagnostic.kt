@@ -11,10 +11,14 @@ class FirDiagnosticWithParameters1<A>(override val reason: String, val a: A, val
 
 enum class DiagnosticKind {
     Syntax,
+    ExpressionRequired,
+    NotLoopLabel,
+    JumpOutsideLoop,
+    VariableExpected,
+
     ReturnNotAllowed,
     UnresolvedLabel,
     IllegalConstExpression,
-    ConstructorInObject,
     DeserializationError,
     InferenceError,
     NoSupertype,

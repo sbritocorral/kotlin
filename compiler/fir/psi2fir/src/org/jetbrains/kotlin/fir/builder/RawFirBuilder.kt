@@ -83,6 +83,10 @@ class RawFirBuilder(
         return (this as KtParenthesizedExpression).expression
     }
 
+    override fun PsiElement.getAnnotatedExpression(): PsiElement? {
+        return (this as KtAnnotatedExpression).baseExpression
+    }
+
     override val PsiElement?.selectorExpression: PsiElement?
         get() = (this as? KtQualifiedExpression)?.selectorExpression
 
@@ -136,14 +140,14 @@ class RawFirBuilder(
             if (stubMode) buildExpressionStub()
             else with(this()) {
                 convertSafe() ?: buildErrorExpression(
-                    this?.toFirSourceElement(), FirSimpleDiagnostic(errorReason, DiagnosticKind.Syntax),
+                    this?.toFirSourceElement(), FirSimpleDiagnostic(errorReason, DiagnosticKind.ExpressionRequired),
                 )
             }
 
         private fun KtExpression?.toFirExpression(errorReason: String): FirExpression =
             if (stubMode) buildExpressionStub()
             else convertSafe() ?: buildErrorExpression(
-                this?.toFirSourceElement(), FirSimpleDiagnostic(errorReason, DiagnosticKind.Syntax),
+                this?.toFirSourceElement(), FirSimpleDiagnostic(errorReason, DiagnosticKind.ExpressionRequired),
             )
 
         private fun KtExpression.toFirStatement(errorReason: String): FirStatement =
@@ -153,16 +157,13 @@ class RawFirBuilder(
             convert()
 
         private fun KtDeclaration.toFirDeclaration(
-            delegatedSuperType: FirTypeRef?, delegatedSelfType: FirResolvedTypeRef?, owner: KtClassOrObject, hasPrimaryConstructor: Boolean,
+            delegatedSuperType: FirTypeRef, delegatedSelfType: FirResolvedTypeRef, owner: KtClassOrObject, hasPrimaryConstructor: Boolean,
         ): FirDeclaration {
             return when (this) {
                 is KtSecondaryConstructor -> {
                     toFirConstructor(
                         delegatedSuperType,
-                        delegatedSelfType ?: buildErrorTypeRef {
-                            source = this@toFirDeclaration.toFirSourceElement()
-                            diagnostic = FirSimpleDiagnostic("Constructor in object", DiagnosticKind.ConstructorInObject)
-                        },
+                        delegatedSelfType,
                         owner,
                         hasPrimaryConstructor,
                     )
@@ -173,7 +174,7 @@ class RawFirBuilder(
                         primaryConstructor?.valueParameters?.isEmpty() ?: owner.secondaryConstructors.let { constructors ->
                             constructors.isEmpty() || constructors.any { it.valueParameters.isEmpty() }
                         }
-                    toFirEnumEntry(delegatedSelfType!!, ownerClassHasDefaultConstructor)
+                    toFirEnumEntry(delegatedSelfType, ownerClassHasDefaultConstructor)
                 }
                 else -> convert()
             }
@@ -398,7 +399,7 @@ class RawFirBuilder(
             delegatedSelfTypeRef: FirTypeRef?,
             delegatedEnumSuperTypeRef: FirTypeRef?,
             classKind: ClassKind,
-        ): FirTypeRef? {
+        ): FirTypeRef {
             var superTypeCallEntry: KtSuperTypeCallEntry? = null
             var delegatedSuperTypeRef: FirTypeRef? = null
             for (superTypeListEntry in superTypeListEntries) {
@@ -453,7 +454,7 @@ class RawFirBuilder(
             if (container.superTypeRefs.isEmpty()) {
                 container.superTypeRefs += defaultDelegatedSuperTypeRef
             }
-            if (this is KtClass && this.isInterface()) return delegatedSuperTypeRef
+            if (this is KtClass && this.isInterface()) return delegatedSuperTypeRef ?: implicitAnyType
 
             // TODO: in case we have no primary constructor,
             // it may be not possible to determine delegated super type right here
@@ -688,13 +689,13 @@ class RawFirBuilder(
                     symbol = FirAnonymousObjectSymbol()
                     val delegatedSelfType = objectDeclaration.toDelegatedSelfType(this)
                     objectDeclaration.extractAnnotationsTo(this)
-                    objectDeclaration.extractSuperTypeListEntriesTo(this, delegatedSelfType, null, ClassKind.CLASS)
+                    val delegatedSuperType = objectDeclaration.extractSuperTypeListEntriesTo(this, delegatedSelfType, null, ClassKind.CLASS)
                     typeRef = delegatedSelfType
 
                     for (declaration in objectDeclaration.declarations) {
                         declarations += declaration.toFirDeclaration(
-                            delegatedSuperType = null,
-                            delegatedSelfType = null,
+                            delegatedSuperType,
+                            delegatedSelfType,
                             owner = objectDeclaration,
                             hasPrimaryConstructor = false,
                         )
@@ -867,7 +868,7 @@ class RawFirBuilder(
         }
 
         private fun KtSecondaryConstructor.toFirConstructor(
-            delegatedSuperTypeRef: FirTypeRef?,
+            delegatedSuperTypeRef: FirTypeRef,
             delegatedSelfTypeRef: FirTypeRef,
             owner: KtClassOrObject,
             hasPrimaryConstructor: Boolean,
@@ -886,7 +887,11 @@ class RawFirBuilder(
                     isFromEnumClass = owner.hasModifier(ENUM_KEYWORD)
                 }
                 symbol = FirConstructorSymbol(callableIdForClassConstructor())
-                delegatedConstructor = getDelegationCall().convert(delegatedSuperTypeRef, delegatedSelfTypeRef, hasPrimaryConstructor)
+                delegatedConstructor = getDelegationCall().convert(
+                    delegatedSuperTypeRef,
+                    delegatedSelfTypeRef,
+                    hasPrimaryConstructor
+                )
                 this@RawFirBuilder.context.firFunctionTargets += target
                 extractAnnotationsTo(this)
                 typeParameters += typeParametersFromSelfType(delegatedSelfTypeRef)
@@ -899,7 +904,7 @@ class RawFirBuilder(
         }
 
         private fun KtConstructorDelegationCall.convert(
-            delegatedSuperTypeRef: FirTypeRef?,
+            delegatedSuperTypeRef: FirTypeRef,
             delegatedSelfTypeRef: FirTypeRef,
             hasPrimaryConstructor: Boolean,
         ): FirDelegatedConstructorCall {
@@ -907,10 +912,7 @@ class RawFirBuilder(
             val source = this.toFirSourceElement()
             val delegatedType = when {
                 isThis -> delegatedSelfTypeRef
-                else -> delegatedSuperTypeRef ?: buildErrorTypeRef {
-                    this.source = source
-                    diagnostic = FirSimpleDiagnostic("No super type", DiagnosticKind.Syntax)
-                }
+                else -> delegatedSuperTypeRef
             }
             return buildDelegatedConstructorCall {
                 this.source = source

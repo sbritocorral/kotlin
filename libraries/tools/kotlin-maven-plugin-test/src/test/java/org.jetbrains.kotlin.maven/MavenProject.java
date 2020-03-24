@@ -50,7 +50,6 @@ class MavenProject {
     private void setUpEnvVars(Map<String, String> env) throws IOException {
         String mavenHome = getNotNullSystemProperty("maven.home");
         env.put("M2_HOME", mavenHome);
-        env.put("M3_HOME", mavenHome);
         String mavenPath = mavenHome + File.separator + "bin";
         env.put("PATH", env.get("PATH") + File.pathSeparator + mavenPath);
     }

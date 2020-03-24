@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.cli.common.arguments.CommonCompilerArguments
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.common.arguments.ManualLanguageFeatureSetting
 import org.jetbrains.kotlin.cli.common.arguments.parseCommandLineArguments
+import org.jetbrains.kotlin.config.ExternalSystemNativeRunTask
 import org.jetbrains.kotlin.config.ExternalSystemRunTask
 import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.gradle.*
@@ -283,7 +284,7 @@ open class KotlinMPPGradleProjectResolver : AbstractProjectResolverExtensionComp
             val sourceSetMap = projectDataNode.getUserData(GradleProjectResolver.RESOLVED_SOURCE_SETS)!!
 
             val sourceSetToTestTasks: MutableMap<KotlinSourceSet, MutableCollection<ExternalSystemRunTask>> = HashMap()
-            val sourceSetToNativeRunTasks: MutableMap<KotlinSourceSet, MutableCollection<ExternalSystemRunTask>> = HashMap()
+            val sourceSetToNativeRunTasks: MutableMap<KotlinSourceSet, MutableCollection<ExternalSystemNativeRunTask>> = HashMap()
             calculateRunTasks(mppModel, gradleModule, resolverCtx, sourceSetToTestTasks, sourceSetToNativeRunTasks)
 
             val sourceSetToCompilationData = LinkedHashMap<KotlinSourceSet, MutableSet<GradleSourceSetData>>()
@@ -428,7 +429,7 @@ open class KotlinMPPGradleProjectResolver : AbstractProjectResolverExtensionComp
             gradleModule: IdeaModule,
             resolverCtx: ProjectResolverContext,
             sourceSetToTestTasks: MutableMap<KotlinSourceSet, MutableCollection<ExternalSystemRunTask>>,
-            sourceSetToNativeRunTasks: MutableMap<KotlinSourceSet, MutableCollection<ExternalSystemRunTask>>
+            sourceSetToNativeRunTasks: MutableMap<KotlinSourceSet, MutableCollection<ExternalSystemNativeRunTask>>
         ) {
             val dependsOnReverseGraph: MutableMap<String, MutableSet<KotlinSourceSet>> = HashMap()
             mppModel.targets.forEach { target ->
@@ -446,8 +447,10 @@ open class KotlinMPPGradleProjectResolver : AbstractProjectResolverExtensionComp
                         val nativeRunTasks = target.nativeRunTasks
                             .filter { testTask -> testTask.compilationName == compilation.name }
                             .map {
-                                ExternalSystemRunTask(
+                                ExternalSystemNativeRunTask(
                                     it.taskName,
+                                    it.entryPoint,
+                                    it.debuggable,
                                     getKotlinModuleId(gradleModule, compilation, resolverCtx),
                                     target.name
                                 )

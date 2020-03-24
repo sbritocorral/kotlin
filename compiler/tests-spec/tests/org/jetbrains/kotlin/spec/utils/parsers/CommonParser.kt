@@ -44,14 +44,13 @@ object CommonParser {
             throw SpecTestValidationException(SpecTestValidationFailedReason.FILENAME_NOT_VALID)
     }
 
-    fun parseImplementationTest(file: File, testArea: TestArea): LinkedSpecTest {
+    fun parseImplementationTest(file: File, testArea: TestArea): LinkedSpecTest? {
         val matcher = ImplementationTestPatterns.testInfoPattern.matcher(file.readText())
 
         if (!matcher.find())
-            throw SpecTestValidationException(SpecTestValidationFailedReason.TESTINFO_NOT_VALID)
+            return null
 
-        val testType = TestType.fromValue(matcher.group("testType"))
-            ?: throw SpecTestValidationException(SpecTestValidationFailedReason.TESTINFO_NOT_VALID)
+        val testType = TestType.fromValue(matcher.group("testType")) ?: return null
         val specVersion = matcher.group("specVersion")
         val testSpecSentenceList = matcher.group("testSpecSentenceList")
         val specSentenceListMatcher = ImplementationTestPatterns.relevantSpecSentencesPattern.matcher(testSpecSentenceList)

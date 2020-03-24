@@ -85,12 +85,14 @@ object TestsJsonMapGenerator {
                 if (!file.isFile || file.extension != "kt") continue
 
                 val parserImplementationTest = parseImplementationTest(file, testArea)
-                val relevantPlaces = parserImplementationTest.relevantPlaces ?: listOf()
+                if (parserImplementationTest != null) {
+                    val relevantPlaces = parserImplementationTest.relevantPlaces ?: listOf()
 
-                (relevantPlaces + parserImplementationTest.place).forEach { specPlace ->
-                    testsMap.getOrCreateSpecTestObject(specPlace, testArea, parserImplementationTest.testType).add(
-                        getTestInfo(parseImplementationTest(file, testArea), file)
-                    )
+                    (relevantPlaces + parserImplementationTest.place).forEach { specPlace ->
+                        testsMap.getOrCreateSpecTestObject(specPlace, testArea, parserImplementationTest.testType).add(
+                            getTestInfo(parserImplementationTest, file)
+                        )
+                    }
                 }
             }
         }

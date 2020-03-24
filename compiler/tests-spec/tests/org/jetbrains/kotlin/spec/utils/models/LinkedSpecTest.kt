@@ -10,12 +10,12 @@ import org.jetbrains.kotlin.spec.utils.SpecTestCasesSet
 import org.jetbrains.kotlin.spec.utils.SpecTestInfoElementType
 import org.jetbrains.kotlin.spec.utils.TestArea
 import org.jetbrains.kotlin.spec.utils.TestType
-import org.jetbrains.kotlin.spec.utils.parsers.LinkedSpecTestPatterns.placePattern
-import org.jetbrains.kotlin.spec.utils.parsers.LinkedSpecTestPatterns.relevantPlacesPattern
+import org.jetbrains.kotlin.spec.utils.parsers.CommonParser.splitByPathSeparator
 import org.jetbrains.kotlin.spec.utils.parsers.CommonParser.withSpaces
 import org.jetbrains.kotlin.spec.utils.parsers.CommonParser.withUnderscores
-import org.jetbrains.kotlin.spec.utils.parsers.CommonParser.splitByPathSeparator
 import org.jetbrains.kotlin.spec.utils.parsers.CommonPatterns.ls
+import org.jetbrains.kotlin.spec.utils.parsers.LinkedSpecTestPatterns.placePattern
+import org.jetbrains.kotlin.spec.utils.parsers.LinkedSpecTestPatterns.relevantPlacesPattern
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -61,9 +61,17 @@ class LinkedSpecTest(
             val description = filename[0].toUpperCase() +
                     filename.substring(1).replace(Regex("""([A-Z])"""), " $1").toLowerCase()
 
+            val relevantPlaces = if (specPlaces.size == 1)
+                emptyList()
+            else specPlaces.subList(1, specPlaces.size - 1)
             return LinkedSpecTest(
-                specVersion, testArea, testType, specPlaces.first(),
-                specPlaces.subList(1, specPlaces.size - 1), 0, description,
+                specVersion,
+                testArea,
+                testType,
+                specPlaces.first(),
+                relevantPlaces,
+                0,
+                description,
                 SpecTestCasesSet(mutableMapOf(), mutableMapOf(), mutableMapOf()),
                 unexpectedBehavior = false, unspecifiedBehavior = false, issues = setOf(), helpers = null, exception = null
             )

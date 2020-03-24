@@ -10,6 +10,7 @@ import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.SimpleJavaSdkType
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.PlatformTestCase
+import org.jetbrains.kotlin.load.kotlin.VirtualFileFinderFactory
 import org.jetbrains.kotlin.test.testFramework.runWriteAction
 import org.jetbrains.kotlin.tools.projectWizard.cli.*
 import org.jetbrains.kotlin.tools.projectWizard.core.service.Services
@@ -79,8 +80,7 @@ abstract class AbstractNewWizardProjectImportTest : PlatformTestCase() {
     }
 
     private fun prepareGradleBuildSystem(directory: Path) {
-        project.getService(GradleSettings::class.java)?.apply {
-            gradleVmOptions = GradleEnvironment.Headless.GRADLE_VM_OPTIONS ?: gradleVmOptions
+        com.intellij.openapi.components.ServiceManager.getService(project, GradleSettings::class.java)?.apply {
             isOfflineWork = GradleEnvironment.Headless.GRADLE_OFFLINE?.toBoolean() ?: isOfflineWork
             serviceDirectoryPath = GradleEnvironment.Headless.GRADLE_SERVICE_DIRECTORY ?: serviceDirectoryPath
             storeProjectFilesExternally = true

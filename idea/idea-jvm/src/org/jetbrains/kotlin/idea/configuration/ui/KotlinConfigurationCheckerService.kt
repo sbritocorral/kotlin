@@ -32,24 +32,25 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class KotlinConfigurationCheckerStartupActivity : StartupActivity.DumbAware {
     override fun runActivity(project: Project) {
+        NotificationsConfiguration.getNotificationsConfiguration()
+            .register(
+                KotlinConfigurationCheckerService.CONFIGURE_NOTIFICATION_GROUP_ID,
+                NotificationDisplayType.STICKY_BALLOON, true
+            )
+
+        val connection = project.messageBus.connect(project)
+        connection.subscribe(ProjectDataImportListener.TOPIC, ProjectDataImportListener {
+            notifyOutdatedBundledCompilerIfNecessary(project)
+        })
+
+        notifyKotlinStyleUpdateIfNeeded(project)
+
         KotlinConfigurationCheckerService.getInstanceIfNotDisposed(project)?.performProjectPostOpenActions()
     }
 }
 
 class KotlinConfigurationCheckerService(val project: Project) {
     private val syncDepth = AtomicInteger()
-
-    init {
-        NotificationsConfiguration.getNotificationsConfiguration()
-            .register(CONFIGURE_NOTIFICATION_GROUP_ID, NotificationDisplayType.STICKY_BALLOON, true)
-
-        val connection = project.messageBus.connect()
-        connection.subscribe(ProjectDataImportListener.TOPIC, ProjectDataImportListener {
-            notifyOutdatedBundledCompilerIfNecessary(project)
-        })
-
-        notifyKotlinStyleUpdateIfNeeded(project)
-    }
 
     fun performProjectPostOpenActions() {
         nonBlocking {

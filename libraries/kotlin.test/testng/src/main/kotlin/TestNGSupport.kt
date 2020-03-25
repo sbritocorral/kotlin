@@ -57,4 +57,10 @@ object TestNGAsserter : Asserter {
         // should not get here
         throw AssertionError(message)
     }
+
+    override fun fail(message: String?, cause: Throwable?): Nothing {
+        Assert.fail(message, cause)
+        // should not get here
+        throw AssertionError(message).initCause(cause)
+    }
 }

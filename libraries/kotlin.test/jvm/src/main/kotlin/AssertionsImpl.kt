@@ -11,10 +11,6 @@ package kotlin.test
 import kotlin.internal.*
 import kotlin.reflect.*
 
-internal actual fun Throwable.initCause(cause: Throwable) {
-    initCause(cause)
-}
-
 /** Asserts that a [blockResult] is a failure with the specific exception type being thrown. */
 @PublishedApi
 internal actual fun <T : Throwable> checkResultIsFailure(exceptionClass: KClass<T>, message: String?, blockResult: Result<Unit>): T {
@@ -76,3 +72,10 @@ actual inline fun todo(@Suppress("UNUSED_PARAMETER") block: () -> Unit) {
 @InlineOnly
 inline fun currentStackTrace() = @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") (java.lang.Exception() as java.lang.Throwable).stackTrace
 
+
+/** Platform-specific construction of AssertionError with cause */
+internal actual fun AssertionErrorWithCause(message: String?, cause: Throwable?): AssertionError {
+    val assertionError = if (message == null) AssertionError() else AssertionError(message)
+    assertionError.initCause(cause)
+    return assertionError
+}

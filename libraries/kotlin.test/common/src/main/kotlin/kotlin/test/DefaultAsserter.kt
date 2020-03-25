@@ -15,6 +15,10 @@ object DefaultAsserter : Asserter {
         else
             throw AssertionError(message)
     }
+
+    override fun fail(message: String?, cause: Throwable?): Nothing {
+        throw AssertionErrorWithCause(message, cause)
+    }
 }
 
 @Deprecated("DefaultAsserter is an object now, constructor call is not required anymore",

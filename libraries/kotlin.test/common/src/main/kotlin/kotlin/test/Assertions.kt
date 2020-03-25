@@ -92,6 +92,11 @@ fun fail(message: String? = null): Nothing {
     asserter.fail(message)
 }
 
+@SinceKotlin("1.4")
+fun fail(message: String? = null, cause: Throwable? = null): Nothing {
+    asserter.fail(message, cause)
+}
+
 /** Asserts that given function [block] returns the given [expected] value. */
 fun <@OnlyInputTypes T> expect(expected: T, block: () -> T) {
     assertEquals(expected, block())
@@ -173,20 +178,8 @@ inline fun <T : Throwable> assertFailsWith(exceptionClass: KClass<T>, block: () 
 inline fun <T : Throwable> assertFailsWith(exceptionClass: KClass<T>, message: String?, block: () -> Unit): T =
     checkResultIsFailure(exceptionClass, message, runCatching(block))
 
-
-internal fun Asserter.fail(message: String?, cause: Throwable): Nothing {
-    try {
-        fail(message)
-    } catch (assertion: Throwable) {
-        assertion.rootCause().initCause(cause)
-        throw assertion
-    }
-}
-
-internal tailrec fun Throwable.rootCause(): Throwable =
-    if (this.cause != null) this.cause!!.rootCause() else this
-
-internal expect fun Throwable.initCause(cause: Throwable)
+/** Platform-specific construction of AssertionError with cause */
+internal expect fun AssertionErrorWithCause(message: String?, cause: Throwable?): AssertionError
 
 /**
  * Abstracts the logic for performing assertions. Specific implementations of [Asserter] can use JUnit
@@ -199,6 +192,14 @@ interface Asserter {
      * @param message the message to report.
      */
     fun fail(message: String?): Nothing
+
+    /**
+     * Fails the current test with the specified message.
+     *
+     * @param message the message to report.
+     */
+    @SinceKotlin("1.4")
+    fun fail(message: String?, cause: Throwable?): Nothing
 
     /**
      * Asserts that the specified value is `true`.
